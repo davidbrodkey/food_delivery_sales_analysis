@@ -94,6 +94,8 @@ df_user$max_price<-NA
 df_user$min_price<-NA
 df_user$first_order<-NA
 df_user$last_order<-NA
+df_user$first_order_day<-NA
+df_user$last_order_day<-NA
 df_user$prop_order_weekend<-NA
 
 for (i in 1:nrow(df_user)){
@@ -106,8 +108,30 @@ for (i in 1:nrow(df_user)){
   df_user$min_price[i]<-min(spc_df$sale_dol)
   df_user$first_order[i]<-min(spc_df$time_opened)
   df_user$last_order[i]<-max(spc_df$time_opened)
+  df_user$first_order_day[i]<-as.Date(min(spc_df$time_opened))
+  df_user$last_order_day[i]<-as.Date(max(spc_df$time_opened))
   df_user$prop_order_weekend<-sum(spc_df$dow %in% c("Saturday","Sunday"))/length(spc_df$dow)
 }
 
+```
+
+```{r}
+ggplot(data=df_user,aes(x=average_price,y=num_orders))+
+  geom_point()+
+  ggtitle("Number of Orders by Average Order price")
+
+ggplot(data=df_user,aes(as.Date(x=last_order_day,origin='1970-01-01'),y=as.Date(first_order_day,origin='1970-01-01')))+
+  geom_point()+
+  ggtitle("First/Last Order Date")+
+  xlab("Last Order Day")+
+  ylab("First Order Day")
+
+
+```
+```{r}
+#Splitting into cohorts. I want to see behavior over time and forecast how new users will tracks. I have data for 57 days. Im going to split into 8 cohorts each represented by 1 week of customers whose first order occured in a specific week (7 day period). Anyone who placed an order in the last day will be discarded.
+
+df_user$cohort<-(df_user$first_order_day-18650)%/%7
+df_user<-df_user[df_user!=8,]
 ```
 
