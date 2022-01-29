@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 
@@ -31,7 +33,10 @@ df_3<-df_2[df_2$subtotal!=0,]
 
 df_3$customer_id<-as.factor(df_3$customer_id)
 
-df_f<-df_3
+#Remove partial day
+df_4<-df_3[as.Date(df_3$time_opened)<'2021-03-21',]
+
+df_f<-df_4
 ```
 
 ```{r}
@@ -48,10 +53,11 @@ ggplot(data=df_f,aes(x=sale_dol))+
          geom_density()+
   ggtitle("Density of Sales in Dollars")
 
+ggplot(data=df_f,aes(x=as.Date(time_opened)))+
+         geom_line(stat='count')+
+  ggtitle("# Sales by Day")
 
-ggplot(data=df_f,aes(x=time_opened))+
-         geom_density()+
-  ggtitle("Density of # Sales by Day")
+#table(as.Date(df_f$time_opened))
 
 table(df_f$dow)
 
@@ -60,4 +66,12 @@ ggplot(data=df_f,aes(x=time_only))+
   ggtitle("Hour of Day of Orders")
 
 ```
+# Question 1
 
+The prompt calls for an email style message. For time purposes I will go with bullet points and potentially circle back to an email format time permitting.
+
+Early EDA Insights 
+- Majority of sales are in about 15-25 dollar range. See a double peak would like to investigate further. Long tail as expected seems to be almost all sales under 100
+- Sales data is from start of Feb to Mar 21. Strong rise of sales over time. Partial last day removed
+- Sales Mon-Thur are pretty consistent. Large uptick Fri/Sat/Sun with Sat being pick. Fri/Sun are about 50% higher than average weekday. Sat is about double a normal weekday. (Note should check is we have different number of days of week in dataset, partial weeks, would be better to average by day. Skipping for time purposes.)
+- The time of orders comes in two major peaks. About a half hour after noon is the first peak for lunch. About 6:30 is the dinner peak. Would be interesting to see how this changes by day of week.
