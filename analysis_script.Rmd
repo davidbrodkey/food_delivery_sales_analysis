@@ -10,6 +10,7 @@ output:
 library(readr)
 library(ggplot2)
 library(hms)
+library(dplyr)
 
 rm(list=ls())
 ```
@@ -75,3 +76,38 @@ Early EDA Insights
 - Sales data is from start of Feb to Mar 21. Strong rise of sales over time. Partial last day removed
 - Sales Mon-Thur are pretty consistent. Large uptick Fri/Sat/Sun with Sat being pick. Fri/Sun are about 50% higher than average weekday. Sat is about double a normal weekday. (Note should check is we have different number of days of week in dataset, partial weeks, would be better to average by day. Skipping for time purposes.)
 - The time of orders comes in two major peaks. About a half hour after noon is the first peak for lunch. About 6:30 is the dinner peak. Would be interesting to see how this changes by day of week.
+
+
+```{r}
+#Feature Engineering by user
+
+#Would probably be more efficient with vectorizing. Im just going to for loop it so I can make faster. Data is small enough
+
+user_list<-unique(df_f$customer_id)
+
+df_user<-data.frame(user_list)
+colnames(df_user)<-"user"
+
+df_user$num_orders<-NA
+df_user$average_price<-NA
+df_user$max_price<-NA
+df_user$min_price<-NA
+df_user$first_order<-NA
+df_user$last_order<-NA
+df_user$prop_order_weekend<-NA
+
+for (i in 1:nrow(df_user)){
+  spc_user<-df_user[i,"user"]
+  spc_df<-df_f[df_f$customer_id==spc_user,]
+  
+  df_user$num_orders[i]<-nrow(spc_df)
+  df_user$average_price[i]<-mean(spc_df$sale_dol)
+  df_user$max_price[i]<-max(spc_df$sale_dol)
+  df_user$min_price[i]<-min(spc_df$sale_dol)
+  df_user$first_order[i]<-min(spc_df$time_opened)
+  df_user$last_order[i]<-max(spc_df$time_opened)
+  df_user$prop_order_weekend<-sum(spc_df$dow %in% c("Saturday","Sunday"))/length(spc_df$dow)
+}
+
+```
+
