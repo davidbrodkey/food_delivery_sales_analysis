@@ -66,21 +66,27 @@ ggplot(data=df_f,aes(x=time_only))+
   ggtitle("Hour of Day of Orders")
 
 ```
+
 # Question 1
 
 The prompt calls for an email style message. For time purposes I will go with bullet points and potentially circle back to an email format time permitting.
 
 Early EDA Insights 
+
 - Majority of sales are in about 15-25 dollar range. See a double peak would like to investigate further. Long tail as expected seems to be almost all sales under 100
+
 - Sales data is from start of Feb to Mar 21. Strong rise of sales over time. Partial last day removed
+
 - Sales Mon-Thur are pretty consistent. Large uptick Fri/Sat/Sun with Sat being pick. Fri/Sun are about 50% higher than average weekday. Sat is about double a normal weekday. (Note should check is we have different number of days of week in dataset, partial weeks, would be better to average by day. Skipping for time purposes.)
+
 - The time of orders comes in two major peaks. About a half hour after noon is the first peak for lunch. About 6:30 is the dinner peak. Would be interesting to see how this changes by day of week.
 
 
 ```{r}
 #Feature Engineering by user
 
-#Would probably be more efficient with vectorizing. Im just going to for loop it so I can make faster. Data is small enough
+#Would probably be more efficient with vectorizing. 
+#Im just going to for loop it so I can make faster. Data is small enough
 
 user_list<-unique(df_f$customer_id)
 
@@ -127,13 +133,13 @@ ggplot(data=df_user,aes(as.Date(x=last_order_day,origin='1970-01-01'),y=as.Date(
 
 
 ```
+
 # 2. Analysis by user
 
 Most users are one time users. I would really look at two bins one-time and repeat customers. I want to look at this data over time and see how people fall off over time.
 
+Splitting into cohorts. I want to see behavior over time and forecast how new users will tracks. I have data for 57 days. Im going to split into 8 cohorts each represented by 1 week of customers whose first order occured in a specific week (7 day period). Anyone who placed an order in the last day will be discarded.
 ```{r}
-#Splitting into cohorts. I want to see behavior over time and forecast how new users will tracks. I have data for 57 days. Im going to split into 8 cohorts each represented by 1 week of customers whose first order occured in a specific week (7 day period). Anyone who placed an order in the last day will be discarded.
-
 df_user$cohort<-(df_user$first_order_day-18650)%/%7
 df_user<-df_user[df_user$cohort!=8,]
 ```
@@ -205,6 +211,7 @@ ggplot(data=coh_df_3,aes(x=days_since_first_order,y=prop_dol,color=as.factor(coh
   geom_line()+
   ggtitle("Proportion Dollars by days since first order")
 ```
+
 # 2. Cohort Analysis by time
 
 First a massive pinch of salt. This data is missing in many ways. We only have part of the life of our customers in many ways. Customers who started in the later part of the dataset are effectively being censored as we are missing data on their later orders. Because of this many of the later cohorts 7,6,5 should will have very different data. Over time I expect the cohorts to start to look more and more similar as later data rolls in.
