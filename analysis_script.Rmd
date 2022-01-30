@@ -135,3 +135,5 @@ df_user$cohort<-(df_user$first_order_day-18650)%/%7
 df_user<-df_user[df_user!=8,]
 ```
 
+
+
