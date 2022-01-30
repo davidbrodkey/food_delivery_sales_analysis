@@ -171,20 +171,41 @@ for (i in 1:nrow(coh_df)){
   coh_df[i,"ret_count"]<-length(unique(spc_df$customer_id))
   
   spc_df_2<-merge_df_2[merge_df_2$cohort==spc_coh & merge_df_2$days_since_first_order<=spc_days_since,]
+  coh_df[i,"cum_dol"]<-sum(spc_df_2$sale_dol)
   
 }
+
+coh_dol<-merge_df_2 %>%
+  group_by(as.factor(cohort)) %>%
+  summarise(tot_dol=sum(sale_dol))
+colnames(coh_dol)[1]<-"cohort"
 
 coh_tot_df<-table(df_user$cohort)
 
 coh_df_2<-merge(coh_df,coh_tot_df,by.x="cohort",by.y="Var1")
-colnames(coh_df_2)[4]<-"total_coh_count"
+colnames(coh_df_2)[5]<-"total_coh_count"
 coh_df_2$prop_ret<-coh_df_2$ret_count/coh_df_2$total_coh_count
+
+
+coh_df_3<-merge(coh_df_2,coh_dol,by.x="cohort",by.y='cohort')
+coh_df_3$prop_dol<-coh_df_3$cum_dol/coh_df_3$tot_dol
 
 ```
 
 ```{r}
-ggplot(data=coh_df_2,aes(x=days_since_first_order,y=prop_ret,color=as.factor(cohort)))+
+ggplot(data=coh_df_3,aes(x=days_since_first_order,y=prop_ret,color=as.factor(cohort)))+
   geom_point()+
   geom_line()
 ```
+```{r}
+ggplot(data=coh_df_3,aes(x=days_since_first_order,y=prop_dol,color=as.factor(cohort)))+
+  geom_point()+
+  geom_line()
+```
+2. Cohort Analysis
 
+First a massive pinch of salt. This data is missing in many ways. We only have part of the life of our customers in many ways. Customers who started in the later part of the dataset are effectlivey being censored as we are missing data on their later orders. Because of this many of the later cohors 7,6,5 should will have very different data. Over time I expect the cohots to start to look more and more similar as later data rolls in.
+
+We saw a huge percent of customers are 1 time customers. From the early cohorts we see ~30% cusomters ever place a second order. Dollar wise about 60-70% of money is made just on initial sale with the rest trickling in later.
+
+Because of this I see the second order as a huge oppurtunity. 
