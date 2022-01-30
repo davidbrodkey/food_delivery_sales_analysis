@@ -144,9 +144,11 @@ df_user$days_data<-max(df_user$last_order_day)-df_user$last_order_day+1
 ```
 
 ```{r}
-coh_ind_df<-unique(df_user[,c("user","cohort")])
+coh_ind_df<-unique(df_user[,c("user","cohort","first_order_day")])
 merge_df<-merge(df_f,coh_ind_df,by.x="customer_id",by.y="user",all.x=TRUE)
 merge_df_2<-merge_df[!is.na(merge_df$cohort),]
+merge_df_2$order_day<-as.numeric(as.Date(merge_df_2$time_opened))
+merge_df_2$days_since_first_order<-merge_df_2$order_day-merge_df_2$first_order_day
 ```
 
 
@@ -156,6 +158,33 @@ days<-0:max(df_user$retention_days)
 
 coh_df<-expand.grid(cohorts,days)
 colnames(coh_df)<-c("cohort","days_since_first_order")
+
+coh_df$ret_count<-NA
+
+coh_df$cum_dol<-NA
+
+for (i in 1:nrow(coh_df)){
+  spc_coh<-coh_df[i,"cohort"]
+  spc_days_since<-coh_df[i,"days_since_first_order"]
+  
+  spc_df<-merge_df_2[merge_df_2$cohort==spc_coh & merge_df_2$days_since_first_order>=spc_days_since,]
+  coh_df[i,"ret_count"]<-length(unique(spc_df$customer_id))
+  
+  spc_df_2<-merge_df_2[merge_df_2$cohort==spc_coh & merge_df_2$days_since_first_order<=spc_days_since,]
+  
+}
+
+coh_tot_df<-table(df_user$cohort)
+
+coh_df_2<-merge(coh_df,coh_tot_df,by.x="cohort",by.y="Var1")
+colnames(coh_df_2)[4]<-"total_coh_count"
+coh_df_2$prop_ret<-coh_df_2$ret_count/coh_df_2$total_coh_count
+
 ```
 
+```{r}
+ggplot(data=coh_df_2,aes(x=days_since_first_order,y=prop_ret,color=as.factor(cohort)))+
+  geom_point()+
+  geom_line()
+```
 
