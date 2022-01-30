@@ -132,8 +132,30 @@ ggplot(data=df_user,aes(as.Date(x=last_order_day,origin='1970-01-01'),y=as.Date(
 #Splitting into cohorts. I want to see behavior over time and forecast how new users will tracks. I have data for 57 days. Im going to split into 8 cohorts each represented by 1 week of customers whose first order occured in a specific week (7 day period). Anyone who placed an order in the last day will be discarded.
 
 df_user$cohort<-(df_user$first_order_day-18650)%/%7
-df_user<-df_user[df_user!=8,]
+df_user<-df_user[df_user$cohort!=8,]
 ```
 
+```{r}
+df_user$retention_days<-1+df_user$last_order_day-df_user$first_order_day
+df_user$days_data<-max(df_user$last_order_day)-df_user$last_order_day+1
+
+
+
+```
+
+```{r}
+coh_ind_df<-unique(df_user[,c("user","cohort")])
+merge_df<-merge(df_f,coh_ind_df,by.x="customer_id",by.y="user",all.x=TRUE)
+merge_df_2<-merge_df[!is.na(merge_df$cohort),]
+```
+
+
+```{r}
+cohorts<-unique(df_user$cohort)
+days<-0:max(df_user$retention_days)
+
+coh_df<-expand.grid(cohorts,days)
+colnames(coh_df)<-c("cohort","days_since_first_order")
+```
 
 
