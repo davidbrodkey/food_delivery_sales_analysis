@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Food Delivery Sales Analysis"
 output:
   pdf_document: default
   html_notebook: default
@@ -17,7 +17,6 @@ rm(list=ls())
 
 ```{r}
 df<- read_csv("sample_orders.csv")
-
 ```
 
 ```{r}
@@ -128,6 +127,10 @@ ggplot(data=df_user,aes(as.Date(x=last_order_day,origin='1970-01-01'),y=as.Date(
 
 
 ```
+# 2. Analysis by user
+
+Most users are one time users. I would really look at two bins one-time and repeat customers. I want to look at this data over time and see how people fall off over time.
+
 ```{r}
 #Splitting into cohorts. I want to see behavior over time and forecast how new users will tracks. I have data for 57 days. Im going to split into 8 cohorts each represented by 1 week of customers whose first order occured in a specific week (7 day period). Anyone who placed an order in the last day will be discarded.
 
@@ -138,9 +141,6 @@ df_user<-df_user[df_user$cohort!=8,]
 ```{r}
 df_user$retention_days<-1+df_user$last_order_day-df_user$first_order_day
 df_user$days_data<-max(df_user$last_order_day)-df_user$last_order_day+1
-
-
-
 ```
 
 ```{r}
@@ -163,6 +163,7 @@ coh_df$ret_count<-NA
 
 coh_df$cum_dol<-NA
 
+#Using for loop because of time limitations. Vectorizing would be much more efficient
 for (i in 1:nrow(coh_df)){
   spc_coh<-coh_df[i,"cohort"]
   spc_days_since<-coh_df[i,"days_since_first_order"]
@@ -195,17 +196,52 @@ coh_df_3$prop_dol<-coh_df_3$cum_dol/coh_df_3$tot_dol
 ```{r}
 ggplot(data=coh_df_3,aes(x=days_since_first_order,y=prop_ret,color=as.factor(cohort)))+
   geom_point()+
-  geom_line()
+  geom_line()+
+  ggtitle("Retention Prop by Days since first order")
 ```
 ```{r}
 ggplot(data=coh_df_3,aes(x=days_since_first_order,y=prop_dol,color=as.factor(cohort)))+
   geom_point()+
-  geom_line()
+  geom_line()+
+  ggtitle("Proportion Dollars by days since first order")
 ```
-2. Cohort Analysis
+# 2. Cohort Analysis by time
 
-First a massive pinch of salt. This data is missing in many ways. We only have part of the life of our customers in many ways. Customers who started in the later part of the dataset are effectlivey being censored as we are missing data on their later orders. Because of this many of the later cohors 7,6,5 should will have very different data. Over time I expect the cohots to start to look more and more similar as later data rolls in.
+First a massive pinch of salt. This data is missing in many ways. We only have part of the life of our customers in many ways. Customers who started in the later part of the dataset are effectively being censored as we are missing data on their later orders. Because of this many of the later cohorts 7,6,5 should will have very different data. Over time I expect the cohorts to start to look more and more similar as later data rolls in.
 
-We saw a huge percent of customers are 1 time customers. From the early cohorts we see ~30% cusomters ever place a second order. Dollar wise about 60-70% of money is made just on initial sale with the rest trickling in later.
+We saw a huge percent of customers are 1 time customers. From the early cohorts we see ~30% customers ever place a second order. Dollar wise about 60-70% of money is made just on initial sale with the rest trickling in later.
 
-Because of this I see the second order as a huge oppurtunity. 
+Because of this I see the second order as a huge opportunity. I saw in an earlier graph that the drop of from second to third order is not bad. So I would focus on offering discounts or promos after a first order to try and hook a second purchase and hopefully form a habit.
+
+I want to emphasize more data is needed for this kind of time based analysis. Too much data censoring is going on.
+
+
+
+```{r}
+#Number of cohorts by group
+coh_tot_df
+coh_dol
+
+#Using cohorts 0-3 most complete
+coh_df_3[coh_df_3$cohort<4 & coh_df_3$days_since_first_order==0,]
+
+day_0_prop<-mean(coh_df_3[coh_df_3$cohort<4 & coh_df_3$days_since_first_order==0,]$prop_dol)
+
+
+```
+
+# 3. LTV
+
+Using cohorts 0-3 (least censored). I see on average 67.8% of money is made on first sale. So I would value a cohort at Day 0 sales * (1/.678). This is an initial fast pass at valuation that could be improved on. This gives us a way to value our week of customers based on just their day 0 purchase value. This is probably an underestimate due to censored sales date that happened after this data set ends.
+
+```{r}
+out_df<-coh_df_3[coh_df_3$days_since_first_order==0,]
+out_df$coh_val<-out_df$cum_dol/day_0_prop
+
+print(out_df)
+
+print(out_df[,c("cohort","coh_val")])
+```
+
+
+
